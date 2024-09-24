@@ -35,12 +35,13 @@ occ_ext <- distinctOcc %>%
   ) %>% 
   mutate(
     basisOfRecord = "humanObservation",
-    occurrenceID = case_when(!AlternativeAssociatedID == "ND" ~ AlternativeAssociatedID,
+    occurrenceID = case_when(AlternativeAssociatedID != "ND" ~ AlternativeAssociatedID,
                              AlternativeAssociatedID == "ND" ~ IsoNum,
                              AlternativeAssociatedID == "SH_18_12-245" ~ paste(AlternativeAssociatedID, row_number())),
     occurrenceStatus = "present",
     verbatimIdentification = SpeciesID,
-    vernacularName = TaxaCategory
+    vernacularName = TaxaCategory,
+    individualCount = "1"
   )
   
 occ_ext <- left_join (occ_ext, Shimada_Event, by = c("locality", "decimalLatitude", "decimalLongitude"),
@@ -51,16 +52,22 @@ occ_ext <- left_join (occ_ext, Shimada_Event, by = c("locality", "decimalLatitud
     eventDate,
     occurrenceStatus,
     basisOfRecord,
+    individualCount,
     locality,
     countryCode,
-    
+    SpeciesID,
+    verbatimIdentification,
+    TaxaCategory,
+    vernacularName
   )
 
 # Pulling WoRMS taxonomic info --------------------------------------------
 
 speciesList <- distinctOcc$SpeciesID %>% na.omit() %>% unique()
+speciesList[speciesList=="Tubeworm"] <- "Polychaeta"
+speciesList[speciesList=="Starfish"] <- "Asteroidea"
 
-myAphiaID <- wm_records_names(speciesList) %>% 
+myAphiaID <- wm_records_taxamatch(speciesList) %>% 
   data.table::rbindlist()
 
 uniqueAphiaSelectColumns <- select(.data = myAphiaID,
@@ -73,11 +80,13 @@ uniqueAphiaSelectColumns <- select(.data = myAphiaID,
                                    family,
                                    genus,
                                    lsid,
-                                   AphiaID) %>% 
+                                   AphiaID) %>%
   rename(
     scientificName = scientificname,
     taxonRank = rank,
     scientificNameID = lsid
   )
+
+left_join(occ_ext, uniqueAphiaSelectColumns,)
 
   
