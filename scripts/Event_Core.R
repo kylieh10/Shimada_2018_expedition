@@ -138,3 +138,13 @@ stationEvents <- originalData %>%
       ) %>% 
     distinct()
   
+
+# Export to csv -----------------------------------------------------------
+
+  Infauna_Event %>% 
+    write.csv(
+      paste0("data/Shimada_2018_expedition_event_", Sys.Date(), ".csv"),
+      na = "",
+      fileEncoding = "UTF-8", 
+      row.names = FALSE
+    )
