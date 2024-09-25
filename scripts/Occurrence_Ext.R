@@ -15,7 +15,7 @@ sb_filenames <- item_list_files(sb_id = sb_id)
 
 originalData <-readr::read_csv(file = sb_filenames$url[1])
 
-
+# make sure to run Event_Core script first to join with occurrences in this script
 # Pulling unique occurrences ----------------------------------------------
 
 distinctOcc <- originalData %>% 
@@ -44,8 +44,14 @@ occ_ext <- distinctOcc %>%
     individualCount = "1"
   )
   
-occ_ext <- left_join (occ_ext, Shimada_Event, by = c("locality", "decimalLatitude", "decimalLongitude"),
+occ_ext_dates <- left_join (occ_ext, Shimada_Event, by = c("locality", "decimalLatitude", "decimalLongitude"),
                       relationship = "many-to-many") %>% 
+  mutate(
+    identificationQualifier = 
+      case_when(grepl("cf\\.", SpeciesID) ~ gsub(".*cf\\.(.+)", "inc\\.\\1", SpeciesID),
+                grepl("sp\\.", SpeciesID) ~ "indet.")
+# replace inside speciesID with text in the matching group (.+)
+    )%>% 
   select(
     occurrenceID,
     eventID,
@@ -58,7 +64,8 @@ occ_ext <- left_join (occ_ext, Shimada_Event, by = c("locality", "decimalLatitud
     SpeciesID,
     verbatimIdentification,
     TaxaCategory,
-    vernacularName
+    vernacularName,
+    identificationQualifier
   )
 
 # Pulling WoRMS taxonomic info --------------------------------------------
@@ -87,6 +94,16 @@ uniqueAphiaSelectColumns <- select(.data = myAphiaID,
     scientificNameID = lsid
   )
 
-left_join(occ_ext, uniqueAphiaSelectColumns,)
+Shimada_occ <- left_join(occ_ext_dates, uniqueAphiaSelectColumns)
 
+
+# Export to csv --------------------------------------------------------------
+
+Shimada_occ %>% 
+  write.csv(
+    paste0("data/Shimada_2018_expedition_occurrences_", Sys.Date(), ".csv"),
+    na = "",
+    fileEncoding = "UTF-8", 
+    row.names = FALSE
+  )
   

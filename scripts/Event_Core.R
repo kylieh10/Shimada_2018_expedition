@@ -116,7 +116,8 @@ stationEvents <- originalData %>%
   stationEventsNew <- 
     left_join(stationEvents, cruiseWithSamplingDates, by = "locality", relationship = "many-to-many") %>%
     mutate(eventDate = case_when (`locality` == "Heceta Bank" ~ paste("2018-10-12","2018-11-07", sep = "/"),
-                          .default = as.character(eventDate))
+                          .default = as.character(eventDate)),
+           eventRemarks = "dates pulled from doi:10.5066/P99DIQZ5, a dataset from the same cruise and with the same sites"
     )
     
 #creating final table with parent cruise and sampling events
@@ -134,14 +135,15 @@ stationEvents <- originalData %>%
       maximumDepthInMeters,
       samplingProtocol,
       verbatimLatitude,
-      verbatimLongitude
+      verbatimLongitude,
+      eventRemarks
       ) %>% 
     distinct()
   
 
 # Export to csv -----------------------------------------------------------
 
-  Infauna_Event %>% 
+  Shimada_Event %>% 
     write.csv(
       paste0("data/Shimada_2018_expedition_event_", Sys.Date(), ".csv"),
       na = "",
